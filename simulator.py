@@ -106,6 +106,7 @@ def create_piechart(dataframe):
     return pie
 
 
+# TODO: Make this none dynamic and split off the graph and dropdown into the layout
 def create_children(dataframe):
     """
     :param dataframe: the dataframe
