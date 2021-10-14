@@ -318,6 +318,21 @@ def parse_contents(contents, filename):
     return df
 
 
+def validate_value(dataframe, min_values, max_values):
+    """
+    Checks to see if the entered value is valid based on the min and max values
+    """
+    table = list(dataframe["New"])
+    for min_v, max_v, value in zip(min_values, max_values, table):
+        if value == "":
+            value = 0
+        if value < min_v:
+            return True
+        if value > max_v:
+            return True
+    return False
+
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SUPERHERO],
                 # For mobile devices
                 meta_tags=[{'name': 'viewport',
@@ -653,6 +668,25 @@ def update_bar(choice, data):
     dff = rank_column(df, choice)
     line = create_linechart(dff, choice)
     return line
+
+
+# Error checking. Commented out for faster preformance
+@app.callback(
+     Output("error-toast", "is_open"),
+     [Input("datatable_indicators", "active_cell"),
+      Input("datatable_indicators", 'data')],
+     State('memory-output', 'data'),
+     prevent_initial_call=True
+)
+def open_toast(cell, data, memory_data):
+     df = pd.read_json(memory_data, orient='split')
+     min = min_value(df)
+     max = max_value(df)
+     if cell is not None:
+         new_entry = pd.DataFrame(data)
+         return validate_value(new_entry, min, max)
+     else:
+         return dash.no_update
 
 
 @app.callback(
