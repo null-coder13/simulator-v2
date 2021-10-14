@@ -2,8 +2,6 @@
 # Mentor: Professor Ruby
 # Developed during Quip-RS 2021
 
-# TODO:
-# 3. Uploading a file - update options --update dropdown?
 
 import os.path
 
@@ -36,7 +34,6 @@ def calculate_ranks(dataframe, transform_columns, weights):
     """
     Calculates the ranks for a given program and returns the dataframe
     """
-    # TODO: Return the calculated df and create a method getting the sim_rank 
     calc_df = dataframe
     # Transform data if needed
     if transform_columns is not None:
@@ -106,8 +103,7 @@ def create_piechart(dataframe):
     return pie
 
 
-# TODO: Make this none dynamic and split off the graph and dropdown into the layout
-def create_children(dataframe):
+def create_dropdown(dataframe):
     """
     :param dataframe: the dataframe
     :return: bar chart and dropdown menu
@@ -115,13 +111,6 @@ def create_children(dataframe):
     dropdown = graph_dropdown(dataframe)
     first_value = list(dropdown[0].values())[0]
     children = [
-        dcc.Graph(
-            id={
-                'type': 'dynamic-graph',
-                'index': 0
-            }
-        ),
-        html.Br(),
         dcc.Dropdown(
             id={
                 'type': 'dynamic-dropdown',
@@ -228,16 +217,15 @@ def clean_df(dataframe):
     return df
 
 
-def create_dataframe(program):
+def create_dataframe(program, uploaded_data = None):
     """
     Creates the dataframe for the given program
     """
     config = get_config()
     if config.has_section(program):
         d_f = pd.read_excel(config[program]['location'], index_col=None)
-# TODO: Figure out what to do with uploaded data
-#    else:
-#        d_f = upload_df
+    else:
+        d_f = uploaded_data
     return d_f
 
 
@@ -309,6 +297,27 @@ def create_linechart(dataframe, choice):
     return line_chart
 
 
+def parse_contents(contents, filename):
+    content_type, content_string = contents.split(',')
+    decoded = base64.b64decode(content_string)
+    try:
+        if 'csv' in filename:
+            # Assume that the user uploaded a CSV file
+            upload_name = os.path.splitext(filename)[0]
+            df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+        elif 'xls' in filename:
+            # Assume that the user uploaded an excel file
+            upload_name = os.path.splitext(filename)[0]
+            df = pd.read_excel(io.BytesIO(decoded))
+        elif 'xlsx' in filename:
+            upload_name = os.path.splitext(filename)[0]
+            df = pd.read_excel(io.BytesIO(decoded))
+    except Exception as e:
+        print(e)
+        return None
+    return df
+
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SUPERHERO],
                 # For mobile devices
                 meta_tags=[{'name': 'viewport',
@@ -342,8 +351,6 @@ app.layout = dbc.Container([
 
     dbc.Row([
         dbc.Col(
-            # html.H2('Quinnipiac University',
-            #         className='text-center')),
             html.Img(src=app.get_asset_url('qu.png'))),
         dbc.Col([
             html.P('Select a program:',
@@ -494,8 +501,19 @@ app.layout = dbc.Container([
     ]),
     dbc.Row([
         dbc.Col([
+            dcc.Graph(
+                id={
+                    'type': 'dynamic-graph',
+                    'index': 0
+                }
+            ),
+            html.Br(),
+        ]),
+    ]),
+    dbc.Row([
+        dbc.Col([
             html.Div(
-                id='bar_container',
+                id='bar_dropdown',
                 style={
                     'width': '100%',
                     'height': '100%'
@@ -539,18 +557,25 @@ app.layout = dbc.Container([
     ## May need to use storage_type= local or session
     dcc.Store(id='memory-output'),
     dcc.Store(id='current-program'),
+    dcc.Store(id='uploaded_data')
 ])
 
 
 @app.callback([Output('memory-output', 'data'),
                Output('current-program', 'data')],
-               Input('my-dropdown', 'value')
+               Input('my-dropdown', 'value'),
+               State('uploaded_data', 'data')
 )
-def store_dataset(val_chosen):
+def store_dataset(val_chosen, data):
     """
     Updates the data stored on the browser
     """
-    df = create_dataframe(val_chosen)
+    if data != None:
+        print('There is no data in the uploaded_data')
+        uploaded_df = pd.read_json(data, orient='split')
+    else:
+        uploaded_df = None
+    df = create_dataframe(val_chosen, uploaded_df)
     data = [{'name':val_chosen}]
     return df.to_json(date_format='iso', orient='split'), data
 
@@ -558,7 +583,7 @@ def store_dataset(val_chosen):
 @app.callback(
         [Output('datatable_indicators', 'data'),
          Output('pie_chart','figure'),
-         Output('bar_container', 'children')],
+         Output('bar_dropdown', 'children')],
         Input('memory-output','data')
 )
 def update_charts(stored_data):
@@ -574,7 +599,7 @@ def update_charts(stored_data):
 
     df_copy = df.drop(['School'], axis=1)
     dff = table_data(df)
-    children = create_children(df_copy)
+    children = create_dropdown(df_copy)
     dff = dff.drop(0)
     return dff.to_dict('records'), pie_chart, children
 
@@ -584,22 +609,17 @@ def update_charts(stored_data):
          Output('simulated_output', 'children'),
          Output('us_rank_output', 'children'),
          Output('diff_rank_output', 'children')],
-        # May need to use State
         Input('datatable_indicators', 'data'),
         [State('memory-output','data'),
          State('current-program', 'data')]
-        #TODO: prevent init call?
 )
 def update_ranks(data, stored_data, program):
-#    ctx = dash.callback_context
-#    changed_id = ctx.triggered[0]['prop_id'].split('.')[0]
     df = pd.read_json(stored_data, orient='split')
     weights = get_weights(df)
     transform_col = transform_list(df)
     us_news_rank = get_us_news(df)
     df = clean_df(df)
 
-    # Calculate original sim rank
     dff = df
     dff = calculate_ranks(dff, transform_col, weights)
     original_sim_rank = get_sim_rank(dff)
@@ -622,7 +642,6 @@ def update_ranks(data, stored_data, program):
     return update_rank_number(df, current_program, original_sim_rank, new_sim_rank, us_news_rank)
 
 
-# TODO: Figure out how to not call this callback twice when changing datasets
 @app.callback(
     Output({'type': 'dynamic-graph', 'index': 0}, 'figure'),
     Input({'type': 'dynamic-dropdown', 'index': 0}, 'value'),
@@ -634,6 +653,24 @@ def update_bar(choice, data):
     dff = rank_column(df, choice)
     line = create_linechart(dff, choice)
     return line
+
+
+@app.callback(
+    [Output('my-dropdown', 'options'),
+     Output('uploaded_data', 'data')],
+    Input('upload-data', 'contents'),
+    State('upload-data', 'filename'),
+    State('my-dropdown', 'options'),
+    prevent_initial_call=True
+)
+def update_options(contents, filename, options):
+    if contents is not None:
+        uploaded_df = parse_contents(contents, filename)
+        upload_name = os.path.splitext(filename)[0]
+        dropdown_options = options
+        new_option = {'label': str(upload_name), 'value': str(upload_name)}
+        dropdown_options.append(new_option)
+        return dropdown_options, uploaded_df.to_json(date_format='iso', orient='split')
 
 
 # Start the app
