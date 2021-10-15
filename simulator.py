@@ -379,11 +379,11 @@ app.layout = dbc.Container([
 
     dbc.Row([
         dbc.Col(
-            html.Div(id='simulated_output')
+            html.Div(id='us_rank_output'),
         ),
 
         dbc.Col(
-            html.Div(id='us_rank_output'),
+            html.Div(id='simulated_output')
         ),
 
         dbc.Col(
@@ -670,7 +670,7 @@ def update_bar(choice, data):
     return line
 
 
-# Error checking. Commented out for faster preformance
+# Error checking. Comment out for faster preformance
 @app.callback(
      Output("error-toast", "is_open"),
      [Input("datatable_indicators", "active_cell"),
