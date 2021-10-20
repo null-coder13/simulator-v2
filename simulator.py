@@ -303,14 +303,11 @@ def parse_contents(contents, filename):
     try:
         if 'csv' in filename:
             # Assume that the user uploaded a CSV file
-            upload_name = os.path.splitext(filename)[0]
             df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
         elif 'xls' in filename:
             # Assume that the user uploaded an excel file
-            upload_name = os.path.splitext(filename)[0]
             df = pd.read_excel(io.BytesIO(decoded))
         elif 'xlsx' in filename:
-            upload_name = os.path.splitext(filename)[0]
             df = pd.read_excel(io.BytesIO(decoded))
     except Exception as e:
         print(e)
@@ -414,7 +411,6 @@ app.layout = dbc.Container([
                     {"name": 'New', "id": 'New', "editable": True, "type": 'numeric',
                      "on_change": {"action": "coerce", "failure": "reject"}}
                 ],
-#                data=selected_df.to_dict('records'),
                 style_cell={
                     'minWidth': 100, 'maxWidth': 150, 'width': 100
                 },
@@ -463,7 +459,6 @@ app.layout = dbc.Container([
                     {"name": 'Simulated Rank', "id": 'Simulated Rank', 'editable': False},
                     {"name": 'School', "id": 'School', 'editable': False, 'type': 'text'}
                 ],
-#                data=rank_df.to_dict('records'),
                 style_data={
                     'whiteSpace': 'normal',
                     'border': '1px solid black'
@@ -569,7 +564,6 @@ app.layout = dbc.Container([
         html.Br(),
         html.Br(),
     ]),
-    ## May need to use storage_type= local or session
     dcc.Store(id='memory-output'),
     dcc.Store(id='current-program'),
     dcc.Store(id='uploaded_data')
