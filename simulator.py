@@ -543,6 +543,13 @@ app.layout = dbc.Container([
     ]),
     dbc.Row([
         dbc.Col([
+            html.Div(html.A('Warning! Please read manual before uploading new data! Click here to download.', download='RankingSimUserGuide.pdf', href=app.get_asset_url('RankingSimUserGuide.pdf'))),
+            html.Br(),
+            ], style={'textAlign': 'center'}),
+
+    ]),
+    dbc.Row([
+        dbc.Col([
             dcc.Upload(
                 id='upload-data',
                 children=html.Div([
@@ -550,7 +557,7 @@ app.layout = dbc.Container([
                     html.A('Select Files')
                 ]),
                 style={
-                    'width': '1100px',
+                    'width': '100%',
                     'height': '60px',
                     'lineHeight': '60px',
                     'borderWidth': '1px',
