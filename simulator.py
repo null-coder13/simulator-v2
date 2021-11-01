@@ -1,7 +1,6 @@
 # Author: Thomas Gadacy
 # Mentor: Professor Ruby
 # Developed during Quip-RS 2021
-#test
 
 import os.path
 
