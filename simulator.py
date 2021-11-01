@@ -182,7 +182,6 @@ def transform_list(dataframe):
     data = dataframe.iloc[1].dropna()
     if data.empty or 'Unnamed: 0' in list(data.index):
         return None
-    print(data.index)
     return list(data.index)
 
 
@@ -600,7 +599,6 @@ def store_dataset(val_chosen, data):
     Updates the data stored on the browser
     """
     if data != None:
-        print('There is no data in the uploaded_data')
         uploaded_df = pd.read_json(data, orient='split')
     else:
         uploaded_df = None
