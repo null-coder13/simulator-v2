@@ -25,6 +25,18 @@ def get_config():
     config.read(file)
     return config
 
+def update_config(filename):
+    config = get_config()
+    ## TODO: append to Dropdown then add a location
+    section_name = os.path.splitext(filename)[0]
+    config[section_name]  = {
+            'location': 'data_sets/' + filename
+            }
+    config['Drop_Down'][section_name] = section_name
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
+    return True;
+
 def get_sim_rank(dataframe):
     index = get_index(dataframe)
     return dataframe.iloc[index]['Simulated Rank']
@@ -168,8 +180,9 @@ def transform_list(dataframe):
     If there are no columns None is returned
     """
     data = dataframe.iloc[1].dropna()
-    if data.empty:
+    if data.empty or 'Unnamed: 0' in list(data.index):
         return None
+    print(data.index)
     return list(data.index)
 
 
@@ -635,7 +648,6 @@ def update_ranks(data, stored_data, program):
     transform_col = transform_list(df)
     us_news_rank = get_us_news(df)
     df = clean_df(df)
-
     dff = df
     dff = calculate_ranks(dff, transform_col, weights)
     original_sim_rank = get_sim_rank(dff)
@@ -701,6 +713,9 @@ def open_toast(cell, data, memory_data):
 def update_options(contents, filename, options):
     if contents is not None:
         uploaded_df = parse_contents(contents, filename)
+        uploaded_df.to_excel('data_sets/' + filename, index=False)
+        # TODO: ERROR calculating ranks of uploaded data was saved
+        update_config(filename)
         upload_name = os.path.splitext(filename)[0]
         dropdown_options = options
         new_option = {'label': str(upload_name), 'value': str(upload_name)}
