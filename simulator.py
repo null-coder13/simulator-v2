@@ -1,7 +1,7 @@
 # Author: Thomas Gadacy
 # Mentor: Professor Ruby
 # Developed during Quip-RS 2021
-
+#test
 
 import os.path
 
@@ -27,7 +27,6 @@ def get_config():
 
 def update_config(filename):
     config = get_config()
-    ## TODO: append to Dropdown then add a location
     section_name = os.path.splitext(filename)[0]
     config[section_name]  = {
             'location': 'data_sets/' + filename
@@ -712,7 +711,6 @@ def update_options(contents, filename, options):
     if contents is not None:
         uploaded_df = parse_contents(contents, filename)
         uploaded_df.to_excel('data_sets/' + filename, index=False)
-        # TODO: ERROR calculating ranks of uploaded data was saved
         update_config(filename)
         upload_name = os.path.splitext(filename)[0]
         dropdown_options = options
